@@ -424,6 +424,7 @@ std::string HumanReadableNumTranscendentalOps(double trops, double nanoseconds);
 // severity, filename, and line number.
 void LogLines(int sev, absl::string_view text, const char* fname, int lineno);
 
+<<<<<<< HEAD
 // Used on a function to trap bad calls: any call that matches the specified
 // condition will cause a compile-time error. This macro uses a clang-specific
 // "diagnose_if" attribute, as described at
@@ -450,11 +451,11 @@ constexpr bool IsRuntimeEvaluated() {
 #endif
 }
 
+=======
+>>>>>>> parent of daaed07d105 ([XLA] Fail calls to LsbMask at compile time if we can prove that they are invalid)
 // Returns a mask with "width" number of least significant bits set.
 template <typename T>
-constexpr inline T LsbMask(int width)
-    XLA_DIAGNOSE_ERROR_IF(width < 0 || width >= std::numeric_limits<T>::digits,
-                          "width must be between [0, sizeof(T)*8)") {
+constexpr inline T LsbMask(int width) {
   static_assert(std::is_unsigned<T>::value,
                 "T should be an unsigned integer type");
   if (IsRuntimeEvaluated()) {
