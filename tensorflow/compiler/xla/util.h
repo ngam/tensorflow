@@ -455,14 +455,20 @@ constexpr bool IsRuntimeEvaluated() {
 >>>>>>> parent of daaed07d105 ([XLA] Fail calls to LsbMask at compile time if we can prove that they are invalid)
 // Returns a mask with "width" number of least significant bits set.
 template <typename T>
-constexpr inline T LsbMask(int width) {
+inline T LsbMask(int width) {
   static_assert(std::is_unsigned<T>::value,
                 "T should be an unsigned integer type");
+<<<<<<< HEAD
   if (IsRuntimeEvaluated()) {
     DCHECK_GE(width, 0) << "Unsupported width " << width;
     DCHECK_LE(width, std::numeric_limits<T>::digits)
         << "Unsupported width " << width;
   }
+=======
+  CHECK_GE(width, 0) << "Unsupported width " << width;
+  CHECK_LE(width, std::numeric_limits<T>::digits)
+      << "Unsupported width " << width;
+>>>>>>> parent of 0b6cc85863c ([XLA] Mark LsbMask as constexpr)
   return width == 0
              ? 0
              : static_cast<T>(-1) >> (std::numeric_limits<T>::digits - width);
@@ -486,7 +492,7 @@ constexpr inline int Log2Ceiling(T x) {
 
 // Returns the value with every bit except the lower 'width' bits set to zero.
 template <typename T>
-constexpr inline T ClearUpperBits(T value, int width) {
+inline T ClearUpperBits(T value, int width) {
   return value & LsbMask<T>(width);
 }
 
