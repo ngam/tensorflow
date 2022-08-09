@@ -1721,7 +1721,7 @@ class DatasetV2(collections_abc.Iterable, tracking_base.Trackable,
       ```python
       dataset = make_dataset()
       def custom_shard_func(element):
-        return 0
+        return np.int64(0)
       dataset.save(
           path="/path/to/data", ..., shard_func=custom_shard_func)
       ```
@@ -4280,6 +4280,23 @@ def make_initializable_iterator(dataset, shared_name=None):
 @tf_export("data.experimental.get_structure")
 def get_structure(dataset_or_iterator):
   """Returns the type signature for elements of the input dataset / iterator.
+
+  For example, to get the structure of a `tf.data.Dataset`:
+
+  >>> dataset = tf.data.Dataset.from_tensor_slices([1, 2, 3])
+  >>> tf.data.experimental.get_structure(dataset)
+  TensorSpec(shape=(), dtype=tf.int32, name=None)
+
+  >>> dataset = tf.data.experimental.from_list([(1, 'a'), (2, 'b'), (3, 'c')])
+  >>> tf.data.experimental.get_structure(dataset)
+  (TensorSpec(shape=(), dtype=tf.int32, name=None),
+   TensorSpec(shape=(), dtype=tf.string, name=None))
+
+  To get the structure of an `tf.data.Iterator`:
+
+  >>> dataset = tf.data.Dataset.from_tensor_slices([1, 2, 3])
+  >>> tf.data.experimental.get_structure(iter(dataset))
+  TensorSpec(shape=(), dtype=tf.int32, name=None)
 
   Args:
     dataset_or_iterator: A `tf.data.Dataset` or an `tf.data.Iterator`.

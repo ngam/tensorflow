@@ -193,6 +193,7 @@ py_library(
         ":string_ops",
         ":tensor_array_ops",
         ":training",
+        ":uniform_quant_ops_gen",
         ":weights_broadcast_ops",
         ":while_v2",
         "//tensorflow/core:protos_all_py",
@@ -963,6 +964,16 @@ tf_gen_op_wrapper_private_py(
     ],
     deps = [
         "//tensorflow/core/tpu/ops:tpu_partitioned_ops",
+    ],
+)
+
+tf_gen_op_wrapper_private_py(
+    name = "uniform_quant_ops_gen",
+    visibility = [
+        "//tensorflow:__subpackages__",
+    ],
+    deps = [
+        "//tensorflow/core:uniform_quant_ops_op_lib",
     ],
 )
 
@@ -3245,70 +3256,11 @@ py_library(
 pywrap_tensorflow_macro(
     name = "pywrap_tensorflow_internal",
     srcs = ["pywrap_tensorflow_internal.cc"],
-    static_deps = [
-        "@arm_neon_2_x86_sse//:__subpackages__",
-        "@bazel_tools//:__subpackages__",
-        "@boringssl//:__subpackages__",
-        "@clog//:__subpackages__",
-        "@com_github_cares_cares//:__subpackages__",
-        "@com_github_googlecloudplatform_tensorflow_gcp_tools//:__subpackages__",
-        "@com_github_grpc_grpc//:__subpackages__",
-        "@com_google_absl//:__subpackages__",
-        "@com_google_googleapis//:__subpackages__",
-        "@com_google_protobuf//:__subpackages__",
-        "@com_googlesource_code_re2//:__subpackages__",
-        "@compute_library//:__subpackages__",
-        "@cpuinfo//:__subpackages__",
-        "@cudnn_frontend_archive//:__subpackages__",
-        "@curl//:__subpackages__",
-        "@dlpack//:__subpackages__",
-        "@double_conversion//:__subpackages__",
-        "@eigen_archive//:__subpackages__",
-        "@farmhash_archive//:__subpackages__",
-        "@farmhash_gpu_archive//:__subpackages__",
-        "@fft2d//:__subpackages__",
-        "@flatbuffers//:__subpackages__",
-        "@FP16//:__subpackages__",
-        "@FXdiv//:__subpackages__",
-        "@gemmlowp//:__subpackages__",
-        "@gif//:__subpackages__",
-        "@highwayhash//:__subpackages__",
-        "@hwloc//:__subpackages__",
-        "@icu//:__subpackages__",
-        "@jsoncpp_git//:__subpackages__",
-        "@libjpeg_turbo//:__subpackages__",
-        "@libxsmm_archive//:__subpackages__",
-        "@llvm_openmp//:__subpackages__",
-        "@llvm-project//:__subpackages__",
-        "@llvm_terminfo//:__subpackages__",
-        "@llvm_zlib//:__subpackages__",
-        "@lmdb//:__subpackages__",
-        "@local_config_cuda//:__subpackages__",
-        "@local_config_git//:__subpackages__",
-        "@local_config_nccl//:__subpackages__",
-        "@local_config_python//:__subpackages__",
-        "@local_config_rocm//:__subpackages__",
-        "@local_config_tensorrt//:__subpackages__",
-        "@local_execution_config_platform//:__subpackages__",
-        "@mkl_dnn_acl_compatible//:__subpackages__",
-        "@mkl_dnn_v1//:__subpackages__",
-        "@nccl_archive//:__subpackages__",
-        "@nsync//:__subpackages__",
-        "@org_sqlite//:__subpackages__",
-        "@platforms//:__subpackages__",
-        "@png//:__subpackages__",
-        "@pthreadpool//:__subpackages__",
-        "@pybind11//:__subpackages__",
-        "@ruy//:__subpackages__",
-        "@snappy//:__subpackages__",
-        "@sobol_data//:__subpackages__",
-        "//:__subpackages__",
-        "@upb//:__subpackages__",
-        "@XNNPACK//:__subpackages__",
-        "@zlib//:__subpackages__",
-    ],
     # copybara:comment_begin(OSS Windows only: DEF file for exported symbols)
-    win_def_file = ":pywrap_tensorflow_filtered_def_file",
+    win_def_file = select({
+        "//tensorflow:windows": ":pywrap_tensorflow_filtered_def_file",
+        "//conditions:default": None,
+    }),
     # copybara:comment_end
     deps = [
         ":bfloat16_lib",
@@ -3537,7 +3489,7 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
-# Get the import library of _pywrap_tensorflow_internal.pyd, platform-specific to Windows.
+# Get the import library of _pywrap_tensorflow_internal.pyd
 filegroup(
     name = "get_pywrap_tensorflow_import_lib_file",
     srcs = [":_pywrap_tensorflow_internal.so"],
@@ -3942,10 +3894,6 @@ cuda_py_test(
     name = "factory_ops_test",
     size = "small",
     srcs = ["ops/factory_ops_test.py"],
-    tags = [
-        "no_gpu",  # TODO(b/213596871): a similar test times out (delete
-        # the "no_gpu" tag once this is bug is fully resolved)
-    ],
     deps = [
         ":sparse_ops",
         "//tensorflow/python:platform_test",

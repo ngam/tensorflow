@@ -109,12 +109,20 @@ def HLO_CreateTokenOp : HLO_Op<"create_token", [NoSideEffect]> {
   let summary = "Create Token operator";
 
   let description = [{
-    Produces a HLO token. Tokens are used for ordering side-effecting perations.
+    Produces a HLO token. Tokens are used for ordering side-effecting operations.
     This is exported to HLO as an AfterAll operation with no operands to
     generate a token.
+
+    Example:
+
+    ```mlir
+    %1 = mhlo.create_token : !mhlo.token
+    ```
   }];
 
   let results = (outs HLO_Token:$output);
+
+  let assemblyFormat = "attr-dict `:` type(results)";
 }
 
 //===----------------------------------------------------------------------===//
@@ -827,8 +835,16 @@ def HLO_ReplicaIdOp : HLO_Op<"replica_id", [NoSideEffect,
     value on each replica.
 
     See https://www.tensorflow.org/xla/operation_semantics#replicaid.
+
+    Example:
+
+    ```mlir
+    %0 = mhlo.replica_id : tensor<ui32>
+    ```
   }];
   let results = (outs TensorOf<[UI32]>);
+
+  let assemblyFormat = "attr-dict `:` type(results)";
 }
 
 //===----------------------------------------------------------------------===//
@@ -1138,6 +1154,13 @@ def HLO_CompareOp: HLO_Op<"compare", [NoSideEffect, SameOperandsElementType,
 
     See
     https://www.tensorflow.org/xla/operation_semantics#element-wise_comparison_operations.
+
+    Example:
+
+    ```mlir
+    %0 = mhlo.compare LT, %arg0, %arg1 : (tensor<2xi32>, tensor<2xi32>) -> tensor<2xi1>
+    %1 = mhlo.compare LT, %arg0, %arg1, TOTALORDER : (tensor<2xi32>, tensor<2xi32>) -> tensor<2xi1>
+    ```
   }];
   let arguments = (ins
     HLO_Tensor:$lhs,
@@ -1162,6 +1185,11 @@ def HLO_CompareOp: HLO_Op<"compare", [NoSideEffect, SameOperandsElementType,
     static bool isCompatibleReturnTypes(TypeRange l, TypeRange r) {
       return succeeded(mlir::verifyCompatibleShapes(l, r));
     }
+  }];
+
+  let assemblyFormat = [{
+    $comparison_direction `,` $lhs `,` $rhs (`,` $compare_type^)?
+      attr-dict `:` functional-type(operands, results)
   }];
 }
 
@@ -1799,7 +1827,7 @@ def HLO_UnaryEinsumOp: HLO_Op<"unary_einsum", [NoSideEffect]>, BASE_EinsumOp {
   let hasCustomHLOConverter = 1;
 }
 
-def HLO_FftOp: HLO_Op<"fft", [NoSideEffect]> {
+def HLO_FftOp: HLO_Op<"fft", [InferTensorType, NoSideEffect]> {
   let summary = "Fast fourier transform operator";
   let description = [{
     Returns the fast-fourier-transform of the input array.
@@ -1813,7 +1841,6 @@ def HLO_FftOp: HLO_Op<"fft", [NoSideEffect]> {
     I64ElementsAttr:$fft_length
   );
 
-  let hasVerifier = 1;
   let results = (outs HLO_Tensor);
 }
 
@@ -2111,9 +2138,17 @@ def HLO_PartitionIdOp : HLO_Op<"partition_id", []> {
     (replicas) and a module can also be partitioned to split the work
     between devices. replica-id and partition-id returns the id values of the
     current device.
+
+    Example:
+
+    ```mlir
+    %1 = mhlo.partition_id : tensor<ui32>
+    ```
   }];
   let results = (outs TensorOf<[UI32]>);
   let hasCustomHLOConverter = 1;
+
+  let assemblyFormat = "attr-dict `:` type(results)";
 }
 
 def HLO_PadOp: HLO_ShapedInterfaceOp<"pad",
@@ -2163,12 +2198,19 @@ def HLO_TraceOp: HLO_Op<"trace", []> {
   let summary = "Trace operator";
   let description = [{
     Emits a logging message `tag` with the `operand`.
+
+    Example:
+
+    ```mlir
+    mhlo.trace %arg0, "In test code." : tensor<5x1x5xi32>
+    ```
   }];
   let arguments = (ins
     HLO_Tensor:$operand,
     StrAttr:$tag
   );
   let hasCustomHLOConverter = 1;
+  let assemblyFormat = "$operand `,` $tag attr-dict `:` type($operand)";
 }
 
 def HLO_TransposeOp: HLO_ShapedInterfaceOp<"transpose",
@@ -2298,6 +2340,15 @@ def HLO_ReduceWindowOp: HLO_Op<"reduce_window", [
 def HLO_ReturnOp : HLO_Op<"return", [NoSideEffect, Terminator]> {
   let summary = [{
     The `hlo.return` operation terminates a region and returns values.
+
+    Example:
+
+    ```mlir
+    %0 = mhlo.reduce %arg0, %arg1 {
+      ...
+      mhlo.return %1 : tensor<f32>
+    }
+    ```
   }];
 
   let arguments = (ins
@@ -2308,7 +2359,7 @@ def HLO_ReturnOp : HLO_Op<"return", [NoSideEffect, Terminator]> {
   // instruction and is only used as a terminator for regions.
   let hasCustomHLOConverter = 1;
 
-  // TODO(hinsu): Implement custom printer and parser.
+  let assemblyFormat = "$results attr-dict (`:` type($results)^)?";
 }
 
 def HLO_TorchIndexSelectOp : HLO_Op<"torch_index_select", [NoSideEffect]> {
@@ -2454,7 +2505,7 @@ def HLO_UniformQuantizeOp : HLO_UnaryElementwiseOp<"uniform_quantize",
 }
 
 def HLO_UniformDequantizeOp : HLO_UnaryElementwiseOp<"uniform_dequantize",
-      [NoSideEffect], HLO_QuantizedIntTensor, TensorOf<[F32, BF16]>> {
+      [InferTensorType, NoSideEffect], HLO_QuantizedIntTensor, TensorOf<[F32, BF16]>> {
   let summary = "Uniform dequantize operator";
   let description = [{
     Converts quantized array of integers to floating-points according to the

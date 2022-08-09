@@ -441,6 +441,14 @@ PJRT_Error* PJRT_Buffer_OnDeviceTrimmedShape(
   return nullptr;
 }
 
+PJRT_Error* PJRT_Buffer_Destroy(PJRT_Buffer_Destroy_Args* args) {
+  PJRT_RETURN_IF_ERROR(CheckMatchingStructSizes(
+      "PJRT_Buffer_Destroy_Args", PJRT_Buffer_Destroy_Args_STRUCT_SIZE,
+      args->struct_size));
+  delete args->buffer;
+  return nullptr;
+}
+
 PJRT_Error* PJRT_Buffer_OnDeviceSizeInBytes(
     PJRT_Buffer_OnDeviceSizeInBytes_Args* args) {
   PJRT_RETURN_IF_ERROR(CheckMatchingStructSizes(
@@ -497,6 +505,55 @@ PJRT_Error* PJRT_Buffer_IsOnCpu(PJRT_Buffer_IsOnCpu_Args* args) {
       "PJRT_Buffer_IsOnCpu_Args", PJRT_Buffer_IsOnCpu_Args_STRUCT_SIZE,
       args->struct_size));
   args->is_on_cpu = args->buffer->buffer->IsOnCpu();
+  return nullptr;
+}
+
+// -------------------------------- Events -------------------------------------
+
+PJRT_Error* PJRT_Event_Destroy(PJRT_Event_Destroy_Args* args) {
+  PJRT_RETURN_IF_ERROR(CheckMatchingStructSizes(
+      "PJRT_Event_Destroy", PJRT_Event_Destroy_Args_STRUCT_SIZE,
+      args->struct_size));
+
+  delete args->event;
+  return nullptr;
+}
+
+PJRT_Error* PJRT_Event_IsReady(PJRT_Event_IsReady_Args* args) {
+  PJRT_RETURN_IF_ERROR(CheckMatchingStructSizes(
+      "PJRT_Event_IsReady", PJRT_Event_IsReady_Args_STRUCT_SIZE,
+      args->struct_size));
+
+  args->is_ready = args->event->future.IsReady();
+  return nullptr;
+}
+
+PJRT_Error* PJRT_Event_Await(PJRT_Event_Await_Args* args) {
+  PJRT_RETURN_IF_ERROR(CheckMatchingStructSizes(
+      "PJRT_Event_Await", PJRT_Event_Await_Args_STRUCT_SIZE,
+      args->struct_size));
+
+  PJRT_Event* event = args->event;
+  event->status.emplace(event->future.Await());
+  PJRT_RETURN_IF_ERROR(event->status.value());
+  return nullptr;
+}
+
+PJRT_Error* PJRT_Event_Error(PJRT_Event_Error_Args* args) {
+  PJRT_RETURN_IF_ERROR(CheckMatchingStructSizes(
+      "PJRT_Event_Error", PJRT_Event_Error_Args_STRUCT_SIZE,
+      args->struct_size));
+
+  PJRT_Event* event = args->event;
+  CHECK(event->future.IsReady());
+  if (!event->status.has_value()) {
+    PJRT_Event_Await_Args await_args;
+    await_args.struct_size = PJRT_Event_Await_Args_STRUCT_SIZE;
+    await_args.priv = nullptr;
+    await_args.event = event;
+    return PJRT_Event_Await(&await_args);
+  }
+  PJRT_RETURN_IF_ERROR(event->status.value());
   return nullptr;
 }
 

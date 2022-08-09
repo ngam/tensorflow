@@ -113,7 +113,7 @@ func.func @constant(%arg0: tensor<2xf32>) -> tensor<2xf32> {
 
 // CHECK-LABEL: func @greater
 func.func @greater(%arg0: tensor<2xi32>, %arg1: tensor<2xi32>) -> tensor<2xi1> {
-  // CHECK-NEXT:  "mhlo.compare"(%arg0, %arg1) {compare_type = #mhlo<comparison_type SIGNED>, comparison_direction = #mhlo<comparison_direction GT>}
+  // CHECK-NEXT:  mhlo.compare GT, %arg0, %arg1, SIGNED
   %0 = "tf.Greater"(%arg0, %arg1) : (tensor<2xi32>, tensor<2xi32>) -> tensor<2xi1>
   func.return %0: tensor<2xi1>
 }
@@ -189,7 +189,7 @@ func.func @sparse_to_dense(%arg0: tensor<3x2xi32>, %arg1: tensor<3xf32>, %arg2: 
 
 // CHECK:      %[[RESULT:.*]] = "mhlo.scatter"(%[[DEFAULT]], %[[ARG0]], %[[ARG1]]) ({
 // CHECK:      ^bb0(%[[ARG3:.*]]: tensor<f32>, %[[ARG4:.*]]: tensor<f32>):
-// CHECK:        "mhlo.return"(%[[ARG4]]) : (tensor<f32>) -> ()
+// CHECK:        mhlo.return %[[ARG4]] : tensor<f32>
 // CHECK:      })
 // CHECK-SAME: indices_are_sorted = false
 // CHECK-SAME: scatter_dimension_numbers

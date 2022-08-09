@@ -64,6 +64,73 @@ const size_t PJRT_Error_Message_Args_STRUCT_SIZE =
 // `error`.
 typedef void PJRT_Error_Message(PJRT_Error_Message_Args* args);
 
+// ---------------------------------- Events -----------------------------------
+
+// Represents a notifying event that is returned by PJRT APIs that enqueue
+// asynchronous work, informing callers when the work is complete and reporting
+// a value of type `PJRT_Error*` or `nullptr` as error status.
+//
+// Callers are always responsible for freeing `PJRT_Event`s by calling
+// `PJRT_Event_Destroy`.
+typedef struct PJRT_Event PJRT_Event;
+
+typedef struct {
+  size_t struct_size;
+  void* priv;
+  PJRT_Event* event;
+} PJRT_Event_Destroy_Args;
+const size_t PJRT_Event_Destroy_Args_STRUCT_SIZE =
+    PJRT_STRUCT_SIZE(PJRT_Event_Destroy_Args, event);
+
+// Frees `event`. `event` can be `nullptr`.
+typedef PJRT_Error* PJRT_Event_Destroy(PJRT_Event_Destroy_Args* args);
+
+typedef struct {
+  size_t struct_size;
+  void* priv;
+  PJRT_Event* event;
+  bool is_ready;  // out
+} PJRT_Event_IsReady_Args;
+const size_t PJRT_Event_IsReady_Args_STRUCT_SIZE =
+    PJRT_STRUCT_SIZE(PJRT_Event_IsReady_Args, is_ready);
+
+// Returns true if this PJRT_Event has completed, including if an error has
+// occurred.
+typedef PJRT_Error* PJRT_Event_IsReady(PJRT_Event_IsReady_Args* args);
+
+typedef struct {
+  size_t struct_size;
+  void* priv;
+  PJRT_Event* event;
+} PJRT_Event_Error_Args;
+const size_t PJRT_Event_Error_Args_STRUCT_SIZE =
+    PJRT_STRUCT_SIZE(PJRT_Event_Error_Args, event);
+
+// Should only be called if PJRT_Event_IsReady returns true.
+// Returns `nullptr` if there is no error.
+// The returned error should be freed with `PJRT_Error_Destroy`.
+//
+// If `PJRT_Event_Await` has been called, this will return a pointer to an
+// identical error status as that call, as will subsequent calls to
+// `PJRT_Event_Error`. However, each of these `PJRT_Error *` pointers are
+// independent of `PJRT_Error *`s returned by other function calls, so they must
+// each be freed separately using `PJRT_Error_Destroy`.
+typedef PJRT_Error* PJRT_Event_Error(PJRT_Event_Error_Args* args);
+
+typedef struct {
+  size_t struct_size;
+  void* priv;
+  PJRT_Event* event;
+} PJRT_Event_Await_Args;
+
+const size_t PJRT_Event_Await_Args_STRUCT_SIZE =
+    PJRT_STRUCT_SIZE(PJRT_Event_Await_Args, event);
+
+// Blocks the calling thread until `event` is ready, then returns the error
+// status (with `nullptr` indicating no error). The returned status should be
+// freed with `PJRT_Error_Destroy`.
+typedef PJRT_Error* PJRT_Event_Await(PJRT_Event_Await_Args* args);
+
 // ---------------------------------- Client -----------------------------------
 
 typedef struct PJRT_Client PJRT_Client;
@@ -484,6 +551,18 @@ typedef PJRT_Error* PJRT_Executable_Execute(PJRT_Executable_Execute_Args* args);
 
 // ---------------------------------- Buffers ----------------------------------
 
+typedef struct {
+  size_t struct_size;
+  void* priv;
+  PJRT_Buffer* buffer;
+} PJRT_Buffer_Destroy_Args;
+const size_t PJRT_Buffer_Destroy_Args_STRUCT_SIZE =
+    PJRT_STRUCT_SIZE(PJRT_Buffer_Destroy_Args, buffer);
+
+// Deletes the underlying runtime objects as if 'PJRT_Buffer_Delete' were
+// called and frees `buffer`. `buffer` can be nullptr.
+typedef PJRT_Error* PJRT_Buffer_Destroy(PJRT_Buffer_Destroy_Args* args);
+
 // This trimmed shape doesn't have any Tuple information. In case of Tuple,
 // assert is triggered from the C API  Client.
 // TODO(b/238999986): This is a temporary solution. Remove this later.
@@ -597,6 +676,11 @@ typedef struct {
   _PJRT_API_STRUCT_FIELD(PJRT_Error_Destroy);
   _PJRT_API_STRUCT_FIELD(PJRT_Error_Message);
 
+  _PJRT_API_STRUCT_FIELD(PJRT_Event_Destroy);
+  _PJRT_API_STRUCT_FIELD(PJRT_Event_IsReady);
+  _PJRT_API_STRUCT_FIELD(PJRT_Event_Error);
+  _PJRT_API_STRUCT_FIELD(PJRT_Event_Await);
+
   _PJRT_API_STRUCT_FIELD(PJRT_Client_Create);
   _PJRT_API_STRUCT_FIELD(PJRT_Client_Destroy);
   _PJRT_API_STRUCT_FIELD(PJRT_Client_PlatformName);
@@ -623,6 +707,7 @@ typedef struct {
   _PJRT_API_STRUCT_FIELD(PJRT_Executable_IsDeleted);
   _PJRT_API_STRUCT_FIELD(PJRT_Executable_Execute);
 
+  _PJRT_API_STRUCT_FIELD(PJRT_Buffer_Destroy);
   _PJRT_API_STRUCT_FIELD(PJRT_Buffer_OnDeviceTrimmedShape);
   _PJRT_API_STRUCT_FIELD(PJRT_Buffer_OnDeviceSizeInBytes);
   _PJRT_API_STRUCT_FIELD(PJRT_Buffer_Device);
