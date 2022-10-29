@@ -88,7 +88,6 @@ REQUIRED_PACKAGES = [
     'gast >= 0.2.1, <= 0.4.0',
     'google_pasta >= 0.1.1',
     'h5py >= 2.9.0',
-    'libclang >= 13.0.0',
     'numpy >= 1.20',
     'opt_einsum >= 2.3.2',
     'packaging',
@@ -99,14 +98,12 @@ REQUIRED_PACKAGES = [
     # See also: https://github.com/protocolbuffers/protobuf/issues/9954
     # See also: https://github.com/tensorflow/tensorflow/issues/56077
     # This is a temporary patch for now, to patch previous TF releases.
-    'protobuf >= 3.9.2, < 3.20',
+    'protobuf >= 3.9.2',
     'setuptools',
     'six >= 1.12.0',
     'termcolor >= 1.1.0',
     'typing_extensions >= 3.6.6',
     'wrapt >= 1.11.0',
-    'tensorflow-io-gcs-filesystem >= 0.23.1;platform_machine!="arm64" or ' +
-    'platform_system!="Darwin"',
     # grpcio does not build correctly on big-endian machines due to lack of
     # BoringSSL support.
     # See https://github.com/tensorflow/tensorflow/issues/17882.
